@@ -7,15 +7,6 @@ const Season = require('../models/season')
 // require file system and jsdom
 var fs = require('fs');
 
-// For jsdom version 9 or lower
-var jsdom = require('jsdom').jsdom;
-var document = jsdom('');
-var window = document.defaultView;
-
-// require anychart and anychart export modules
-var anychart = require('anychart')(window);
-var anychartExport = require('anychart-nodejs')(anychart);
-
 exports.distribution = () => {
     Team.find({}).exec().then(teams => {
         return teams

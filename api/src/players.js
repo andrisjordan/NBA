@@ -11,7 +11,7 @@ exports.players = () => {
     console.log("Players")
     var IDs = []
     var picturestrings = []
-    api.getAllPlayers("2018-19")
+    api.getAllPlayers("2019-20")
         .then(data => {
             for (var index in data.resultSets[0].rowSet) {
                 IDs.push(data.resultSets[0].rowSet[index][0])

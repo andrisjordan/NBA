@@ -24,8 +24,23 @@ exports.getAllPlayers = function (season) {
     var Season = new Parameter("Season", season)
     var params = [url, endpoint, LeagueID, Season, IsOnlyCurrentSeason]
     var finalstring = combinestring(params)
-
-    return axios.get(finalstring).then(response => {
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -39,7 +54,23 @@ exports.getPlayerInfo = function (playerid) {
     var params = [url, endpoint, PlayerID]
     var finalstring = combinestring(params)
 
-    return axios.get(finalstring).then(response => {
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -53,7 +84,23 @@ exports.getPlayerProfile = function (playerid) {
     var params = [url, endpoint, PlayerID, PerMode]
     var finalstring = combinestring(params)
 
-    return axios.get(finalstring).then(response => {
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -72,7 +119,23 @@ exports.getPlayerProfile2 = function (playerid, season, seasontype, stat) {
     var params = [url, endpoint, PlayerID, LeagueID, Season, GraphStartSeason, GraphEndSeason, GraphStat, SeasonType]
     var finalstring = combinestring(params)
 
-    return axios.get(finalstring).then(response => {
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -86,9 +149,25 @@ exports.getBoxscore = function (gameid) {
     var params = [url, endpoint, GameID]
     var finalstring = combinestring(params)
 
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -102,9 +181,25 @@ exports.getBoxscoreTradicional = function (gameid) {
     var params = [url, endpoint, GameID, RangeType, StartRange, EndRange, StartPeriod, EndPeriod]
     var finalstring = combinestring(params)
 
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -118,9 +213,25 @@ exports.getBoxscoreAdvanced = function (gameid) {
     var params = [url, endpoint, GameID, RangeType, StartRange, EndRange, StartPeriod, EndPeriod]
     var finalstring = combinestring(params)
 
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -134,9 +245,25 @@ exports.getBoxscorePlayer = function (gameid) {
     var params = [url, endpoint, GameID]
     var finalstring = combinestring(params)
 
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -144,16 +271,32 @@ exports.getBoxscorePlayer = function (gameid) {
     });
 }
 
-exports.getScoreBoard = function (gamedate,offset) {
+exports.getScoreBoard = function (gamedate, offset) {
     var endpoint = "scoreboardV2"
     var GameDate = new Parameter("GameDate", gamedate)
-    var DayOffset = new Parameter("DayOffset",offset)
+    var DayOffset = new Parameter("DayOffset", offset)
     var params = [url, endpoint, LeagueID, GameDate, DayOffset]
     var finalstring = combinestring(params)
 
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -169,9 +312,25 @@ exports.getTeamInfo = function (teamid, season, seasontype) {
     var params = [url, endpoint, TeamID, Season, SeasonType, LeagueID]
     var finalstring = combinestring(params)
 
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -184,9 +343,25 @@ exports.getAllTeams = function () {
     var params = [url, endpoint, LeagueID]
     var finalstring = combinestring(params)
 
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -201,9 +376,25 @@ exports.getTeamRoster = function (teamid, season) {
     var params = [url, endpoint, TeamID, Season]
     var finalstring = combinestring(params)
 
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -218,9 +409,25 @@ exports.getTeamGameLog = function (teamid, season, seasontype) {
     var SeasonType = new Parameter("SeasonType", seasontype)
     var params = [url, endpoint, TeamID, Season, SeasonType]
     var finalstring = combinestring(params)
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -235,9 +442,25 @@ exports.getPlayerCarrerStats = function (playerid) {
     var params = [url, endpoint, PlayerID, PerMode]
     var finalstring = combinestring(params)
 
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
@@ -253,9 +476,25 @@ exports.getPlayerGameLog = function (playerid, season, seasontype) {
     var params = [url, endpoint, PlayerID, Season, SeasonType]
     var finalstring = combinestring(params)
 
-    
 
-    return axios.get(finalstring).then(response => {
+
+    return axios({
+        method: "get",
+        url: finalstring,
+        headers: {
+            'Host': 'stats.nba.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'x-nba-stats-origin': 'stats',
+            'x-nba-stats-token': 'true',
+            'Connection': 'keep-alive',
+            'Referer': 'https://stats.nba.com/',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+        }
+    }).then(response => {
         // returning the data here allows the caller to get it through another .then(...)
         return response.data
     }).catch(err => {
