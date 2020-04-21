@@ -12,7 +12,7 @@ const inactiveFunctions = require('../src/inactives')
 var fs = require('fs')
 
 exports.updateAll = (req, res, next) => {
-    var ses = "2018"
+    var ses = "2019"
     var currentseason = ses
     var season2 = Number(currentseason.slice(2))
     season2 = season2 + 1

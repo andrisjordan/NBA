@@ -6,11 +6,15 @@ const Season = require('../models/season')
 const api = require('../../api')
 const request = require('request');
 const cheerio = require('cheerio');
+const axios = require('axios');
 var fs = require('fs')
-
+const Fs = require('fs')
+const Path = require('path')
+const Axios = require('axios')
+const excelToJson = require('convert-excel-to-json');
 
 exports.games = (Seasons, Numbers) => {
-    var requestTime = 2000
+    var requestTime = 3000
     console.log("")
     console.log("Games")
     var numberOfseasons = Numbers
@@ -51,10 +55,10 @@ exports.games = (Seasons, Numbers) => {
 }
 
 exports.gamesMissed = () => {
-    var requestTime = 2000
+    var requestTime = 3000
     console.log("")
     console.log("Games")
-    var allseasons = allSeasons("2018",19)
+    var allseasons = allSeasons("2019", 10)
     Season.find({
         _id: {
             $in: allseasons
@@ -101,11 +105,98 @@ exports.gamesMissed = () => {
 }
 
 exports.oddsMissed = () => {
-    var requestTime = 2000
+    oddsMissed().then(data => {
+        oddsScrape(data)
+    })
+}
+
+exports.correctGames = () => {
+    var allseasons = allSeasons("2019", 10)
+    return Season.find({
+        _id: {
+            $in: allseasons
+        }
+    }).exec().then(data => {
+        var allgames = []
+        for (var index in data) {
+            for (var index2 in data[index].REGULAR_GAMES) {
+                if (typeof data[index].REGULAR_GAMES[index2] === 'number') {
+                    allgames.push(Number(data[index].REGULAR_GAMES[index2]))
+                }
+            }
+        }
+        return allgames
+    }).then(allgames => {
+        return returnValues(allgames)
+    })
+}
+
+exports.odds = (Season, Numbers) => {
+    var allseasons = allSeasons("2019", 10)
+    var promises = []
+    for (var index= 0; index< allseasons.length;index++){
+       promises.push(downloadOdds(allseasons[index]))
+    }
+    Promise.all(promises).then(done => {
+            getOdds()
+    })
+}
+
+async function downloadOdds(year) {
+    const url = 'https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nba%20odds%20' + year + '.xlsx'
+    const path = Path.resolve('./odds/' + year + '.xlsx')
+    const writer = Fs.createWriteStream(path)
+
+    const response = await Axios({
+        url,
+        method: 'GET',
+        responseType: 'stream'
+    })
+
+    response.data.pipe(writer)
+
+    return new Promise((resolve, reject) => {
+        writer.on('finish', resolve)
+        writer.on('error', reject)
+    })
+}
+
+function getOdds(){
+    var allseasons = allSeasons("2019", 10)
+    for (let index= 0; index< allseasons.length;index++){
+        let filename = './odds/' + allseasons[index] + '.xlsx'
+        let result = excelToJson({
+            sourceFile: filename
+        });
+        result = result.Sheet1  
+        for (let index2 = 1 ; index2< result.length - 1; index2 = index2 + 2){
+            let year = result[index2].A.toString().length > 3 ? Number(allseasons[index].slice(0,4)) : Number(allseasons[index].slice(0,4)) + 1
+            let game = {
+                "TOTAL_PTS_HOME": result[index2].I,
+                "TOTAL_PTS_VISITOR": result[index2 + 1].I,
+                "GAME_DATE_EST": year.toString() + "-" + result[index2].A.toString().slice(0,2)+ "-" + result[index2].A.toString().slice(2,4) + "T00:00:00",
+            }
+            Game.findOne({
+                "TOTAL_PTS_HOME": result[index2].I,
+                "TOTAL_PTS_VISITOR": result[index2 + 1].I,
+                "GAME_DATE_EST": year.toString() + "-" + result[index2].A.toString().slice(0,2)+ "-" + result[index2].A.toString().slice(2,4) + "T00:00:00",
+            }).exec().then(gameMatch => {
+                if(game.GAME_DATE_EST == "2019-10-27T00:00:00"){
+                    console.log(game)
+                    console.log(gameMatch)
+                }
+            })
+        }
+    }
+
+}
+
+function oddsMissed(){
+    var requestTime = 3000
     console.log("")
     console.log("Games")
-    var allseasons = allSeasons("2018",1)
-    Season.find({
+    var allseasons = allSeasons("2019", 10)
+    return Season.find({
         _id: {
             $in: allseasons
         }
@@ -145,39 +236,10 @@ exports.oddsMissed = () => {
             return games
         })
     }).then(data => {
-        oddsScrape(data)
+        return data
     })
 }
 
-exports.correctGames = () => {
-    var allseasons = allSeasons("2018",19)
-    return Season.find({
-        _id: {
-            $in: allseasons
-        }
-    }).exec().then(data => {
-        var allgames = []
-        for (var index in data) {
-            for (var index2 in data[index].REGULAR_GAMES) {
-                if (typeof data[index].REGULAR_GAMES[index2] === 'number') {
-                    allgames.push(Number(data[index].REGULAR_GAMES[index2]))
-                }
-            }
-        }
-        return allgames
-    }).then(allgames => {
-        return returnValues(allgames)
-    })
-}
-
-exports.odds = (Season, Numbers) => {
-    console.log("")
-    console.log("Odds")
-    allGameDates(Season, Number(Numbers)).then(data => {
-        oddsScrape(data)
-    })
-    //[12, 134, ...] Scores of top posts of r/movies at time of writing
-}
 
 function oddsScrape(data) {
     var dates = convertDates(data)
@@ -188,46 +250,50 @@ function oddsScrape(data) {
                 percentage = (i + 1) / (dates.length / 100)
                 percentage = Math.round(percentage, 1)
                 process.stdout.write("Odds: " + percentage + " %\r");
-                var url = 'https://www.sportsbookreview.com/betting-odds/nba-basketball/money-line/?date=' + dates[i]
+                var url = 'https://www.oddsportal.com/basketball/usa/nba/results/'
                 request(url, (err, res, body) => {
-                    //Load HTML body into cheerio
-                    const $ = cheerio.load(body);
-                    //Scrape karma scores
-                    var teams = []
-                    var odds = []
-                    var pointshome = []
-                    var pointsaway = []
-                    $('._3qi53').each(function (i, elem) {
-                        teams[i] = $(this).text();
-                    });
-                    $('._3YgRM,._1QEDd').each(function (i, elem) {
-                        odds[i] = $(this).text();
-                    });
-                    $('._2trL6 div:nth-child(2)').each(function (i, elem) {
-                        pointshome[i] = $(this).text();
-                    });
-                    $('._2trL6 div:nth-child(1)').each(function (i, elem) {
-                        pointsaway[i] = $(this).text();
-                    });
-                    var allgames = []
-                    for (var index = 0; index < teams.length; index = index + 2) {
-                        var game = {
-                            home: teams[index + 1],
-                            visitor: teams[index],
-                            oddhome: oddsConverter(odds[index * 2 + 3]),
-                            oddvisitor: oddsConverter(odds[index * 2 + 2]),
-                            pointshome: pointshome[index / 2],
-                            pointsaway: pointsaway[index / 2],
+                    setTimeout(function (body, ogDates) {
+                        //Load HTML body into cheerio
+                        const $ = cheerio.load(body);
+                        //Scrape karma scores
+                        var teams = []
+                        var odds = []
+                        var pointshome = []
+                        var pointsaway = []
+                        console.log($('body').html())
+                        $('._3qi53').each(function (i, elem) {
+                            teams[i] = $(this).text();
+                        });
+                        $('._3YgRM,._1QEDd').each(function (i, elem) {
+                            console.log($(this).html())
+                            odds[i] = $(this).text();
+                        });
+                        $('._2trL6 div:nth-child(2)').each(function (i, elem) {
+                            pointshome[i] = $(this).text();
+                        });
+                        $('._2trL6 div:nth-child(1)').each(function (i, elem) {
+                            pointsaway[i] = $(this).text();
+                        });
+                        var allgames = []
+                        for (var index = 0; index < teams.length; index = index + 2) {
+                            var game = {
+                                home: teams[index + 1],
+                                visitor: teams[index],
+                                oddhome: oddsConverter(odds[index * 2 + 3]),
+                                oddvisitor: oddsConverter(odds[index * 2 + 2]),
+                                pointshome: pointshome[index / 2],
+                                pointsaway: pointsaway[index / 2],
+                            }
+                            allgames.push(game)
                         }
-                        allgames.push(game)
-                    }
-                    for (let j in allgames) {
-                        let odds = {
-                            ODDS_HOME: Number(allgames[j].oddhome),
-                            ODDS_VISITOR: Number(allgames[j].oddvisitor)
+                        for (let j in allgames) {
+                            let odds = {
+                                ODDS_HOME: Number(allgames[j].oddhome),
+                                ODDS_VISITOR: Number(allgames[j].oddvisitor)
+                            }
+                            updateOdds(odds, ogDates[i], allgames[j].home, allgames[j].visitor)
                         }
-                        updateOdds(odds, ogDates[i], allgames[j].home, allgames[j].visitor)
-                    }
+                    }, 3000, body, ogDates)
                 });
             }, i * 10000);
         })(i);
@@ -318,7 +384,7 @@ function convertDates2(dates) {
 }
 
 function returnValues(gamestotal) {
-    var requestTime = 2000
+    var requestTime = 3000
     return Game.find({
         _id: {
             $in: gamestotal
@@ -433,7 +499,7 @@ function updateGame(id) {
                                                     for (var count in data3.resultSets[0].rowSet) {
                                                         if (data4.resultSets[0].rowSet[ty][4] == data3.resultSets[0].rowSet[count][4]) {
                                                             stat.PLAYER = data4.resultSets[0].rowSet[ty][4],
-                                                            stat.COMMENT = data3.resultSets[0].rowSet[count][7]
+                                                                stat.COMMENT = data3.resultSets[0].rowSet[count][7]
                                                             stat.MIN = data3.resultSets[0].rowSet[count][8]
                                                             stat.SPD = data3.resultSets[0].rowSet[count][9]
                                                             stat.DIST = data3.resultSets[0].rowSet[count][10]
@@ -558,7 +624,8 @@ function updateGame(id) {
                                                         PLAYER_STATS: allStats
                                                     })
                                                     game.save()
-                                                        .then(result => {;
+                                                        .then(result => {
+                                                            ;
                                                         })
                                                         .catch(err => {
                                                             console.log(err);
@@ -670,7 +737,7 @@ function oddsConverter(number) {
     }
 }
 
-function allSeasons(season,number){
+function allSeasons(season, number) {
     var numberOfseasons = number
     var allseasons = []
     for (let jk = 0; jk < numberOfseasons; jk++) {

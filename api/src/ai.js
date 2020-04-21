@@ -72,7 +72,7 @@ exports.findTop5Season = (season, number) => {
 
 
 exports.findTop5SeasonMissing = (season, number) => {
-    var allseasons = allSeasons(season, number)
+    var allseasons = allSeasons("2019", 10)
     return Season.find({
         _id: {
             $in: allseasons
