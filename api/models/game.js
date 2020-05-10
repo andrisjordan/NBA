@@ -13,6 +13,9 @@ const gameSchema = mongoose.Schema({
     GAME_DATE_EST: {
         type: String
     },
+    GAME_DATE_EST_DATE: {
+        type: Date
+    },
     HOME_TEAM_ID: {
         type: Number,
         ref: 'Team',
@@ -28,6 +31,12 @@ const gameSchema = mongoose.Schema({
         ref: 'Player',
         required: true
     }],
+    ELO_HOME: {
+        type: Number
+    },
+    ELO_VISITOR: {
+        type: Number
+    },
     ODDS_HOME: {
         type: Number
     },
@@ -354,7 +363,10 @@ const gameSchema = mongoose.Schema({
         },
         PIE: {
             type: Number
-        }
+        },
+        LAST40: [{
+            type: Number
+        }]
     }],
     TOP_HOME: [{
         ID: {

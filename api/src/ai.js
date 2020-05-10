@@ -31,15 +31,225 @@ exports.distribution = () => {
 }
 
 
-exports.elo = (season) => {
-    Team.find({}).exec().then(teams => {
-        return teams
-    }).then(teams => {
-        return findEloTeams(teams, season)
-    }).then(data3 => {
-        data3 = data3.sort(dynamicSort("Elo"))
-        console.log(data3)
+exports.last40 = () => {
+    let players = {}
+    let allseasons = allSeasonsInverse("2019", 10)
+    return last40func(allseasons, players, 0).then(ok => {
+        console.log("done")
+        return ok
     })
+}
+
+
+exports.elo = () => {
+    let elos = {}
+    let allseasons = allSeasonsInverse("2019", 10)
+    return eloseason(allseasons, elos, 0)
+}
+
+function eloseason(allseasons, elos, seasonInd) {
+    if (seasonInd < allseasons.length) {
+        return Season.find({
+            _id: allseasons[seasonInd]
+        }).exec().then(data => {
+            var allgames = []
+            for (let index3 in data) {
+                for (var index2 in data[index3].REGULAR_GAMES) {
+                    if (typeof data[index3].REGULAR_GAMES[index2] === 'number') {
+                        allgames.push(Number(data[index3].REGULAR_GAMES[index2]))
+                    }
+                }
+            }
+            return allgames
+        }).then(allgames => {
+            return Game.find({
+                _id: {
+                    $in: allgames
+                }
+            }).select("_id GAME_DATE_EST_DATE TOTAL_PTS_HOME TOTAL_PTS_VISITOR HOME_TEAM_ID VISITOR_TEAM_ID").sort({
+                GAME_DATE_EST_DATE: 1
+            }).exec().then(games => {
+                let promises = []
+                for (let index = 0; index < games.length; index++) {
+                    let countHome
+                    let countVisitor
+                    let newEloHome
+                    let newEloVisitor
+                    let firstVisitor = false
+                    let firstHome = false
+                    let HOME_TEAM_ID = games[index].HOME_TEAM_ID
+                    let VISITOR_TEAM_ID = games[index].VISITOR_TEAM_ID
+                    let TOTAL_PTS_HOME = games[index].TOTAL_PTS_HOME
+                    let TOTAL_PTS_VISITOR = games[index].TOTAL_PTS_VISITOR
+                    let beforeEloHome = TOTAL_PTS_HOME > TOTAL_PTS_VISITOR ? 400 : -400
+                    let beforeEloVisitor = TOTAL_PTS_HOME < TOTAL_PTS_VISITOR ? 400 : -400
+                    if (!elos[VISITOR_TEAM_ID]) {
+                        newEloVisitor = 1500
+                        countVisitor = 1
+                        firstVisitor = true
+                        elos[VISITOR_TEAM_ID] = {
+                            elo: newEloVisitor,
+                            count: countVisitor,
+                            date: games[index].GAME_DATE_EST_DATE,
+                            before: beforeEloVisitor,
+                            opponent: elos[HOME_TEAM_ID] ? elos[HOME_TEAM_ID].elo : 1500
+                        }
+                    }
+                    if (!elos[HOME_TEAM_ID]) {
+                        newEloHome = 1500
+                        countHome = 1
+                        firstHome = true
+                        elos[HOME_TEAM_ID] = {
+                            elo: newEloHome,
+                            count: countHome,
+                            date: games[index].GAME_DATE_EST_DATE,
+                            before: beforeEloHome,
+                            opponent: elos[VISITOR_TEAM_ID] ? elos[VISITOR_TEAM_ID].elo : 1500
+                        }
+                    }
+                    promises.push(Game.update({
+                        _id: games[index]._id
+                    }, {
+                        $set: {
+                            ELO_HOME: Math.round(elos[HOME_TEAM_ID].elo),
+                            ELO_VISITOR: Math.round(elos[VISITOR_TEAM_ID].elo)
+                        }
+                    }).exec().then(ok => {
+                        return ok
+                    }))
+
+                    if (firstHome == true) {
+                        //nothing
+                    } else if (new Date(games[index].GAME_DATE_EST_DATE).getMonth() - new Date(elos[HOME_TEAM_ID].date).getMonth() > 3) {
+                        newEloHome = 1500 * 0.5 + elos[HOME_TEAM_ID].elo * 0.5
+                        countHome = 10
+                    } else {
+                        if (elos[HOME_TEAM_ID].count < 20) {
+                            countHome = elos[HOME_TEAM_ID].count + 1
+                        } else {
+                            countHome = elos[HOME_TEAM_ID].count
+                        }
+                        newEloHome = (elos[HOME_TEAM_ID].elo * ((countHome - 1) / countHome)) + ((elos[HOME_TEAM_ID].opponent + elos[HOME_TEAM_ID].before) * (1 / countHome))
+                    }
+                    if (firstVisitor == true) {
+                        //nothing
+                    } else if (new Date(games[index].GAME_DATE_EST_DATE).getMonth() - new Date(elos[VISITOR_TEAM_ID].date).getMonth() > 3) {
+                        newEloVisitor = 1500 * 0.5 + elos[VISITOR_TEAM_ID].elo * 0.5
+                        countVisitor = 10
+                    } else {
+                        if (elos[VISITOR_TEAM_ID].count < 20) {
+                            countVisitor = elos[VISITOR_TEAM_ID].count + 1
+                        } else {
+                            countVisitor = elos[VISITOR_TEAM_ID].count
+                        }
+                        newEloVisitor = (elos[VISITOR_TEAM_ID].elo * ((countVisitor - 1) / countVisitor)) + ((elos[VISITOR_TEAM_ID].opponent + elos[VISITOR_TEAM_ID].before) * (1 / countVisitor))
+                    }
+                    elos[HOME_TEAM_ID] = {
+                        elo: newEloHome,
+                        count: countHome,
+                        date: games[index].GAME_DATE_EST_DATE,
+                        before: beforeEloHome,
+                        opponent: elos[VISITOR_TEAM_ID].elo
+                    }
+                    elos[VISITOR_TEAM_ID] = {
+                        elo: newEloVisitor,
+                        count: countVisitor,
+                        date: games[index].GAME_DATE_EST_DATE,
+                        before: beforeEloVisitor,
+                        opponent: elos[HOME_TEAM_ID].elo
+                    }
+                }
+                return Promise.all(promises).then(done => {
+                    return eloseason(allseasons, elos, seasonInd + 1)
+                })
+            })
+        })
+    } else {
+        return
+    }
+}
+
+
+function last40func(allseasons, players, seasonInd) {
+    if (seasonInd < allseasons.length) {
+        console.log(allseasons[seasonInd])
+        return Season.find({
+            _id: allseasons[seasonInd]
+        }).exec().then(data => {
+            var allgames = []
+            for (let index3 in data) {
+                for (var index2 in data[index3].REGULAR_GAMES) {
+                    if (typeof data[index3].REGULAR_GAMES[index2] === 'number') {
+                        allgames.push(Number(data[index3].REGULAR_GAMES[index2]))
+                    }
+                }
+            }
+            return allgames
+        }).then(allgames => {
+            return Game.find({
+                _id: {
+                    $in: allgames
+                }
+            }).select("_id PLAYER_STATS INACTIVE_PLAYERS").sort({
+                GAME_DATE_EST_DATE: 1
+            }).exec().then(games => {
+                let promises = []
+                for (let index = 0; index < games.length; index++) {
+                    let currentPlayerArr = games[index].PLAYER_STATS
+                    for (let playerIndIN = 0; playerIndIN < games[index].INACTIVE_PLAYERS.length; playerIndIN++) {
+                        let PLAYER_ID = games[index].INACTIVE_PLAYERS[playerIndIN]
+                        if (!players[PLAYER_ID]) {
+                            players[PLAYER_ID] = {
+                                nextValue: 0,
+                                arr: []
+                            }
+                        } else {
+                            if (players[PLAYER_ID].arr.length == 40) {
+                                players[PLAYER_ID].arr.splice(0,1)
+                            } 
+                            players[PLAYER_ID].arr.push(players[PLAYER_ID].nextValue)
+                            players[PLAYER_ID].nextValue = 0
+                        }
+                    }
+                    for (let playerInd = 0; playerInd < currentPlayerArr.length; playerInd++) {
+                        let last40arr
+                        let PLAYER_ID = currentPlayerArr[playerInd].PLAYER
+                        if (!players[PLAYER_ID]) {
+                            players[PLAYER_ID] = {
+                                nextValue: currentPlayerArr[playerInd].PIE,
+                                arr: []
+                            }
+                        } else {
+                            if (players[PLAYER_ID].arr.length == 40) {
+                                players[PLAYER_ID].arr.splice(0,1)
+                            } 
+                            players[PLAYER_ID].arr.push(players[PLAYER_ID].nextValue)
+                            players[PLAYER_ID].nextValue = currentPlayerArr[playerInd].PIE
+                        }
+                        last40arr = players[PLAYER_ID].arr
+                        currentPlayerArr[playerInd].LAST40 = last40arr
+                        if(currentPlayerArr[playerInd].PLAYER == 2544){
+                            console.log(currentPlayerArr[playerInd].LAST40)
+                        }
+                    }
+                    promises.push(Game.updateOne({
+                        _id: games[index]._id,
+                    }, {
+                        $set: {
+                            PLAYER_STATS: currentPlayerArr,
+                        }
+                    }).exec().then(ok => {
+                        return ok
+                    }))
+                }
+                return Promise.all(promises).then(done => {
+                    return last40func(allseasons, players, seasonInd + 1)
+                })
+            })
+        })
+    } else {
+        return
+    }
 }
 
 exports.findTop5Season = (season, number) => {
@@ -103,7 +313,7 @@ exports.findTop5SeasonMissing = (season, number) => {
             return difference
         })
     }).then(allgames => {
-        findTop5Recursive(allgames,0)
+        findTop5Recursive(allgames, 0)
     })
 }
 
@@ -111,14 +321,14 @@ exports.findTop5 = (id) => {
     findTop5(id)
 }
 
-function findTop5Recursive(array,index){
-    if(index==array.length){
+function findTop5Recursive(array, index) {
+    if (index == array.length) {
         console.log("done")
         return
     } else {
         console.log(index)
         findTop5(array[index]).then(data => {
-            findTop5Recursive(array,index+1)
+            findTop5Recursive(array, index + 1)
         })
     }
 }
@@ -631,6 +841,23 @@ function allSeasons(season, number) {
     var numberOfseasons = number
     var allseasons = []
     for (let jk = 0; jk < numberOfseasons; jk++) {
+        var currentseason = season
+        var season2 = Number(currentseason.slice(2))
+        season2 = season2 + 1 - jk
+        if (season2 < 10) {
+            season2 = "0" + season2
+        }
+        currentseason = Number(currentseason) - jk
+        currentseason = currentseason + "-" + season2
+        allseasons.push(currentseason)
+    }
+    return allseasons
+}
+
+function allSeasonsInverse(season, number) {
+    var numberOfseasons = number
+    var allseasons = []
+    for (let jk = numberOfseasons; jk >= 0; jk--) {
         var currentseason = season
         var season2 = Number(currentseason.slice(2))
         season2 = season2 + 1 - jk

@@ -105,8 +105,13 @@ exports.gamesMissed = () => {
 }
 
 exports.oddsMissed = () => {
-    oddsMissed().then(data => {
-        oddsScrape(data)
+    var allseasons = allSeasons("2019", 10)
+    var promises = []
+    for (var index = 0; index < allseasons.length; index++) {
+        promises.push(downloadOdds(allseasons[index]))
+    }
+    Promise.all(promises).then(done => {
+        getOdds()
     })
 }
 
@@ -134,11 +139,13 @@ exports.correctGames = () => {
 exports.odds = (Season, Numbers) => {
     var allseasons = allSeasons("2019", 10)
     var promises = []
-    for (var index= 0; index< allseasons.length;index++){
-       promises.push(downloadOdds(allseasons[index]))
+    for (var index = 0; index < allseasons.length; index++) {
+        promises.push(downloadOdds(allseasons[index]))
     }
-    Promise.all(promises).then(done => {
-            getOdds()
+    return Promise.all(promises).then(done => {
+        return getOdds().then(ok => {
+            console.log("done")
+        })
     })
 }
 
@@ -161,37 +168,46 @@ async function downloadOdds(year) {
     })
 }
 
-function getOdds(){
+function getOdds() {
     var allseasons = allSeasons("2019", 10)
-    for (let index= 0; index< allseasons.length;index++){
+    var promises = []
+    for (let index = 0; index < allseasons.length; index++) {
         let filename = './odds/' + allseasons[index] + '.xlsx'
         let result = excelToJson({
             sourceFile: filename
         });
-        result = result.Sheet1  
-        for (let index2 = 1 ; index2< result.length - 1; index2 = index2 + 2){
-            let year = result[index2].A.toString().length > 3 ? Number(allseasons[index].slice(0,4)) : Number(allseasons[index].slice(0,4)) + 1
-            let game = {
-                "TOTAL_PTS_HOME": result[index2].I,
-                "TOTAL_PTS_VISITOR": result[index2 + 1].I,
-                "GAME_DATE_EST": year.toString() + "-" + result[index2].A.toString().slice(0,2)+ "-" + result[index2].A.toString().slice(2,4) + "T00:00:00",
+        result = result.Sheet1
+        for (let index2 = 1; index2 < result.length - 1; index2 = index2 + 2) {
+            let year = result[index2].A.toString().length > 3 ? Number(allseasons[index].slice(0, 4)) : Number(allseasons[index].slice(0, 4)) + 1
+            let decimalOddHome = result[index2 + 1].L
+            let decimalOddVisitor = result[index2].L
+            if (decimalOddHome > 0) {
+                decimalOddHome = 1 + (result[index2 + 1].L / 100)
+            } else {
+                decimalOddHome = 1 + (100 / (-1 * result[index2 + 1].L))
             }
-            Game.findOne({
-                "TOTAL_PTS_HOME": result[index2].I,
-                "TOTAL_PTS_VISITOR": result[index2 + 1].I,
-                "GAME_DATE_EST": year.toString() + "-" + result[index2].A.toString().slice(0,2)+ "-" + result[index2].A.toString().slice(2,4) + "T00:00:00",
-            }).exec().then(gameMatch => {
-                if(game.GAME_DATE_EST == "2019-10-27T00:00:00"){
-                    console.log(game)
-                    console.log(gameMatch)
+            if (decimalOddVisitor > 0) {
+                decimalOddVisitor = 1 + (result[index2].L / 100)
+            } else {
+                decimalOddVisitor = 1 + (100 / (-1 * result[index2].L))
+            }
+            promises.push(Game.findOneAndUpdate({
+                "TOTAL_PTS_HOME": result[index2 + 1].I,
+                "TOTAL_PTS_VISITOR": result[index2].I,
+                "GAME_DATE_EST": year.toString() + "-" + result[index2].A.toString().slice(0, 2) + "-" + result[index2].A.toString().slice(2, 4) + "T00:00:00",
+            }, {
+                $set: {
+                    ODDS_HOME: decimalOddHome,
+                    ODDS_VISITOR: decimalOddVisitor
                 }
-            })
+            }).exec().then(gameMatch => {}))
         }
     }
+    return Promise.all(promises)
 
 }
 
-function oddsMissed(){
+function oddsMissed() {
     var requestTime = 3000
     console.log("")
     console.log("Games")
@@ -544,7 +560,7 @@ function updateGame(id) {
                                                             stat.E_USG_PCT = data5.resultSets[0].rowSet[count][25]
                                                             stat.E_PACE = data5.resultSets[0].rowSet[count][26]
                                                             stat.PACE = data5.resultSets[0].rowSet[count][27]
-                                                            stat.PIE = data5.resultSets[0].rowSet[count][28]
+                                                            stat.PIE = data5.resultSets[0].rowSet[count][30]
                                                         }
                                                     }
                                                     allStats.push(stat)
@@ -571,6 +587,7 @@ function updateGame(id) {
                                                     var game = new Game({
                                                         _id: data2.resultSets[0].rowSet[0][2],
                                                         GAME_DATE_EST: data2.resultSets[0].rowSet[0][0],
+                                                        GAME_DATE_EST_DATE: new Date(data2.resultSets[0].rowSet[0][0]),
                                                         TYPE: "Regular Season",
                                                         TOTAL_PTS_HOME: totalhome,
                                                         TOTAL_PTS_VISITOR: totalvisitor,
@@ -599,7 +616,7 @@ function updateGame(id) {
                                                         HOME_E_USG_PCT: homeStats[23],
                                                         HOME_E_PACE: homeStats[24],
                                                         HOME_PACE: homeStats[25],
-                                                        HOME_PIE: homeStats[26],
+                                                        HOME_PIE: homeStats[28],
                                                         VISITOR_E_OFF_RATING: visitorStats[6],
                                                         VISITOR_OFF_RATING: visitorStats[7],
                                                         VISITOR_E_DEF_RATING: visitorStats[8],
@@ -620,7 +637,7 @@ function updateGame(id) {
                                                         VISITOR_E_USG_PCT: visitorStats[23],
                                                         VISITOR_E_PACE: visitorStats[24],
                                                         VISITOR_PACE: visitorStats[25],
-                                                        VISITOR_PIE: visitorStats[26],
+                                                        VISITOR_PIE: visitorStats[28],
                                                         PLAYER_STATS: allStats
                                                     })
                                                     game.save()
@@ -633,6 +650,7 @@ function updateGame(id) {
                                                 } else {
                                                     var game = {
                                                         GAME_DATE_EST: data2.resultSets[0].rowSet[0][0],
+                                                        GAME_DATE_EST_DATE: new Date(data2.resultSets[0].rowSet[0][0]),
                                                         TYPE: "Regular Season",
                                                         TOTAL_PTS_HOME: totalhome,
                                                         TOTAL_PTS_VISITOR: totalvisitor,
@@ -661,7 +679,7 @@ function updateGame(id) {
                                                         HOME_E_USG_PCT: homeStats[23],
                                                         HOME_E_PACE: homeStats[24],
                                                         HOME_PACE: homeStats[25],
-                                                        HOME_PIE: homeStats[26],
+                                                        HOME_PIE: homeStats[28],
                                                         VISITOR_E_OFF_RATING: visitorStats[6],
                                                         VISITOR_OFF_RATING: visitorStats[7],
                                                         VISITOR_E_DEF_RATING: visitorStats[8],
@@ -682,7 +700,7 @@ function updateGame(id) {
                                                         VISITOR_E_USG_PCT: visitorStats[23],
                                                         VISITOR_E_PACE: visitorStats[24],
                                                         VISITOR_PACE: visitorStats[25],
-                                                        VISITOR_PIE: visitorStats[26],
+                                                        VISITOR_PIE: visitorStats[28],
                                                         PLAYER_STATS: allStats
                                                     }
                                                     Game.update({
